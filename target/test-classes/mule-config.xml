@@ -41,7 +41,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
             <dw:set-variable variableName="MULE_REPLYTO_STOP"><![CDATA[%dw 1.0
 %output application/java
 ---
-"true"]]></dw:set-variable>
+true]]></dw:set-variable>
         </dw:transform-message>
         <dw:transform-message doc:name="split string to collection" metadata:id="50417587-4f06-42c8-82fb-45835d5686b2">
             <dw:input-payload doc:sample="sample_data\string.dwl" mimeType="application/java"/>
