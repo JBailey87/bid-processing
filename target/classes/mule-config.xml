@@ -15,8 +15,15 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
-    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
-
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="${http.port}" doc:name="HTTP Listener Configuration">
+    
+    </http:listener-config>
+    <queued-asynchronous-processing-strategy name="Queued_Asynchronous_Processing_Strategy" maxThreads="80" minThreads="16" threadTTL="10000" doc:name="Queued Asynchronous Processing Strategy"/>
+    <vm:connector name="VM" validateConnections="true" doc:name="VM">
+    <receiver-threading-profile maxThreadsActive="50" maxThreadsIdle="16"/>
+    <dispatcher-threading-profile maxThreadsActive="50" maxThreadsIdle="16" />
+    </vm:connector>
+	
   <flow name="AuctionService" >
         <http:listener config-ref="HTTP_Listener_Configuration" path="/auction" doc:name="HTTP"/>
     <object-to-string-transformer doc:name="Object to String"/>
@@ -36,7 +43,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
     <!-- vm endpoint responsible for pushing result back to test -->
   </flow>
     <flow name="splitBids">
-        <vm:inbound-endpoint exchange-pattern="one-way" path="split" doc:name="VM - split"/>
+        <vm:inbound-endpoint exchange-pattern="one-way" path="split" doc:name="VM - split" />
         <dw:transform-message doc:name="MULE_REPLYTO_STOP">
             <dw:set-variable variableName="MULE_REPLYTO_STOP"><![CDATA[%dw 1.0
 %output application/java
@@ -53,7 +60,7 @@ payload splitBy "\n"]]></dw:set-payload>
         <collection-splitter doc:name="Collection Splitter"/>
         <vm:outbound-endpoint exchange-pattern="one-way" path="process" doc:name="VM - process"/>
     </flow>
-    <flow name="processBids">
+    <flow name="processBids" processingStrategy="Queued_Asynchronous_Processing_Strategy">
         <vm:inbound-endpoint exchange-pattern="one-way" path="process" doc:name="VM - process"/>
         <component class="com.mulesoft.EnricherAuctionComponent" doc:name="EnrichBids Java Component"/>
         <logger message="#[payload]" level="INFO" doc:name="Logger"/>
